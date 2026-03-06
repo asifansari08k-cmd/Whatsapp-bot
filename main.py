@@ -2,7 +2,22 @@ import os
 import asyncio
 import threading
 from flask import Flask
-from pyrogram import Client, filters, idle
+
+# --- 🛠️ PYROGRAM & PYTHON 3.14 CRASH FIX (Monkey Patch) ---
+# Ye Pyrogram ke import hone se pehle loop ko force-feed karega taaki wo crash na ho
+def safe_get_loop():
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
+
+asyncio.get_event_loop = safe_get_loop
+# -------------------------------------------------------------
+
+# --- AB AAPKA BINA CHHEDA HUA ORIGINAL CODE ---
+from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 
 # --- RENDER PORT BINDING (Bas Render ko Live rakhne ke liye) ---
@@ -23,6 +38,7 @@ STRING_SESSION = "AQI5Xz4ASE6O7locP7_vLrorMTsXT3u80PL1M3tt20Ty8FavBKQdfbZOWjQFya
 
 # --- CONFIGURATION ---
 SOURCE_CHANNEL = "Junaidniz" 
+# Niche [ ] mein apne saare target channels/groups ke username daalo
 DESTINATIONS = ["otpMgroup"] 
 
 # OTP Forwarder Settings
@@ -63,18 +79,10 @@ async def file_cloner(client, message):
         except Exception as e:
             print(f"❌ {chat} mein error: {e}")
 
-# --- PYTHON 3.14 RENDER FIX ---
-async def main():
-    threading.Thread(target=run_flask, daemon=True).start()
-    await app.start()
-    print("🚀 Gourisen OSINT Mega Bot Active!")
-    await idle()
-    await app.stop()
-
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(main())
-    except KeyboardInterrupt:
-        pass
+    # Web server background mein start karo
+    threading.Thread(target=run_flask, daemon=True).start()
+    
+    print("🚀 Gourisen OSINT Mega Bot Active!")
+    # AAPKA ORIGINAL RUN COMMAND
+    app.run()
