@@ -2,19 +2,27 @@ import os
 import asyncio
 import threading
 from flask import Flask
+
+# --- STEP 1: PYTHON 3.14 LOOP FIX (Top Priority) ---
+# Ye Pyrogram se pehle hona zaroori hai taaki 'No current event loop' error na aaye
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+# --- STEP 2: AB IMPORTS KAREIN ---
 from pyrogram import Client, filters, idle
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ParseMode
 from pyrogram.errors import UserNotParticipant
 
-# --- RENDER PORT BINDING (Flask) ---
+# --- RENDER PORT FIX (Flask) ---
 web_app = Flask(__name__)
 
 @web_app.route('/')
 def home():
-    return "Gourisen OSINT Bot is Live! 🚀"
+    return "Gourisen OSINT Mega Bot is Live! 🚀"
 
 def run_flask():
+    # Render $PORT use karta hai (default 8080)
     port = int(os.environ.get("PORT", 8080))
     web_app.run(host="0.0.0.0", port=port)
 
@@ -23,18 +31,13 @@ API_ID = 37314366
 API_HASH = "bd4c934697e7e91942ac911a5a287b46"
 STRING_SESSION = "AQI5Xz4ASE6O7locP7_vLrorMTsXT3u80PL1M3tt20Ty8FavBKQdfbZOWjQFyai9DI46XwNhspJZO7S-V7X9JigDkGjAIfF9swyWqmvkRm1uxxR3ajE9rc4IueYDhBY60CeGk_S0FdD9IAQDmjiycLIOAI4PEvKrP5wi-5i6ecZCz4gxbpmyX5o-S8JnVfv51kivPaXVN3ioFP_TB01cgH29aJ9Oa7axnPKlTaq7hadmFfVEttBthtiT2rLz9QkX9CYmEaCJHopr8W1NqR9Is9VOPo6Y2HUGu_kh8mT1y3mgUswR_942rVYYvX43HQuq2wh1zvkf70PbVl89-2DTVHsKLrv9qQAAAAHxiovLAA"
 
-# Force Join Settings
 FORCE_CHANNELS = [-1003387459132, -1003892920891, -1003851555909, -1003601267291]
 OTP_GC_LINK = "https://t.me/otpMgroup"
-
-# OTP Settings
+SOURCE_CHANNEL = "Junaidniz"
+DESTINATIONS = ["otpMgroup", -1003387459132, -1003892920891, -1003851555909, -1003601267291]
 OTP_SOURCE = -1003087662000
 OTP_DEST = "otpMgroup"
 TARGET_BOTS = ["junaidaliRebot", "JunaidnnRebot"]
-
-# File Cloner Settings
-SOURCE_CHANNEL = "Junaidniz" 
-DESTINATIONS = ["otpMgroup", -1003387459132, -1003892920891, -1003851555909, -1003601267291] 
 
 app = Client("GourisenMegaBot", api_id=API_ID, api_hash=API_HASH, session_string=STRING_SESSION)
 
@@ -54,7 +57,7 @@ async def check_sub(user_id):
 async def start_cmd(client, message):
     if await check_sub(message.from_user.id):
         await message.reply_text(
-            "✅ <b>Aapne saare channels join kar liye hain!</b>",
+            "✅ <b>Verification Successful!</b>\n\nAb aap OTP GC join kar sakte hain.",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Go to OTP Group 🚀", url=OTP_GC_LINK)]]),
             parse_mode=ParseMode.HTML
         )
@@ -70,19 +73,18 @@ async def recheck_cb(client, cb):
     else:
         await cb.answer("❌ Abhi bhi kuch channels baki hain!", show_alert=True)
 
-# --- FEATURE 2: OTP FORWARDER ---
+# --- FEATURE 2: OTP FORWARDER (Quote Style + Stars Protected) ---
 @app.on_message(filters.chat(OTP_SOURCE))
 async def otp_logic(client, message):
     sender = message.from_user.username if message.from_user else ""
     if sender in TARGET_BOTS:
         text = message.text or message.caption
         if text:
-            # Credit hatana & Quote style
             clean = text.split("Powered By")[0].strip() if "Powered By" in text else text.strip()
             final = f"<blockquote>{clean}</blockquote>\n⚡ Powered by @MAGMAxRICH"
             await client.send_message(OTP_DEST, final, parse_mode=ParseMode.HTML)
 
-# --- FEATURE 3: FILE CLONER ---
+# --- FEATURE 3: FILE CLONER (Clean Copy) ---
 @app.on_message(filters.chat(SOURCE_CHANNEL) & (filters.document | filters.video | filters.photo | filters.audio))
 async def file_cloner(client, message):
     for dest in DESTINATIONS:
@@ -91,15 +93,19 @@ async def file_cloner(client, message):
         except:
             pass
 
-# --- RENDER RUNNER ---
+# --- RENDER MAIN RUNNER ---
 async def start_bot():
+    # Flask ko thread mein start karna taaki Render health check pass ho jaye
     threading.Thread(target=run_flask, daemon=True).start()
+    
     await app.start()
-    print("🚀 Bot is Online!")
+    print("🚀 Gourisen OSINT Bot is Online!")
     await idle()
     await app.stop()
 
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(start_bot())
+    # Event loop ko manually run karna Python 3.14 crash se bachne ke liye
+    try:
+        loop.run_until_complete(start_bot())
+    except KeyboardInterrupt:
+        pass
