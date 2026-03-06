@@ -2,36 +2,30 @@ import os
 import asyncio
 import threading
 from flask import Flask
-
-# --- STEP 1: RENDER LOOP FIX (Top Priority) ---
-# Ye Pyrogram import karne se PEHLE hona zaroori hai
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-
-# --- STEP 2: AB IMPORTS KAREIN ---
 from pyrogram import Client, filters, idle
 from pyrogram.enums import ParseMode
 
-# --- RENDER PORT BINDING (Flask) ---
+# --- RENDER PORT BINDING (Bas Render ko Live rakhne ke liye) ---
 web_app = Flask(__name__)
 
 @web_app.route('/')
 def home():
-    return "Gourisen OSINT Bot is Live! 🚀"
+    return "Gourisen OSINT Mega Bot is Live! 🚀"
 
 def run_flask():
-    # Render $PORT variable use karta hai (Default 8080)
     port = int(os.environ.get("PORT", 8080))
     web_app.run(host="0.0.0.0", port=port)
 
-# --- CONFIGURATION (Aapka Diya Hua Data) ---
+# --- AAPKE DETAILS ---
 API_ID = 37314366
 API_HASH = "bd4c934697e7e91942ac911a5a287b46"
 STRING_SESSION = "AQI5Xz4ASE6O7locP7_vLrorMTsXT3u80PL1M3tt20Ty8FavBKQdfbZOWjQFyai9DI46XwNhspJZO7S-V7X9JigDkGjAIfF9swyWqmvkRm1uxxR3ajE9rc4IueYDhBY60CeGk_S0FdD9IAQDmjiycLIOAI4PEvKrP5wi-5i6ecZCz4gxbpmyX5o-S8JnVfv51kivPaXVN3ioFP_TB01cgH29aJ9Oa7axnPKlTaq7hadmFfVEttBthtiT2rLz9QkX9CYmEaCJHopr8W1NqR9Is9VOPo6Y2HUGu_kh8mT1y3mgUswR_942rVYYvX43HQuq2wh1zvkf70PbVl89-2DTVHsKLrv9qQAAAAHxiovLAA"
 
+# --- CONFIGURATION ---
 SOURCE_CHANNEL = "Junaidniz" 
 DESTINATIONS = ["otpMgroup"] 
 
+# OTP Forwarder Settings
 OTP_SOURCE = -1003087662000
 OTP_DEST = "otpMgroup"
 TARGET_BOTS = ["junaidaliRebot", "JunaidnnRebot"]
@@ -69,19 +63,18 @@ async def file_cloner(client, message):
         except Exception as e:
             print(f"❌ {chat} mein error: {e}")
 
-# --- MAIN RUNNER ---
-async def start_everything():
-    # Flask Health Check start karna taaki Render 'Live' mane
+# --- PYTHON 3.14 RENDER FIX ---
+async def main():
     threading.Thread(target=run_flask, daemon=True).start()
-    
     await app.start()
-    print("🚀 Bot Connected! Forwarding Active hai.")
+    print("🚀 Gourisen OSINT Mega Bot Active!")
     await idle()
     await app.stop()
 
 if __name__ == "__main__":
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
-        # Loop ko manually run karna Render fix ke liye
-        loop.run_until_complete(start_everything())
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         pass
