@@ -3,18 +3,16 @@ import asyncio
 import threading
 from flask import Flask
 
-# --- STEP 1: RENDER/PYTHON 3.14 LOOP FIX (Priority No. 1) ---
-# Ye Pyrogram import karne se PEHLE hona chahiye warna bot crash ho jayega
+# --- STEP 1: RENDER LOOP FIX (Top Priority) ---
+# Ye Pyrogram import karne se PEHLE hona zaroori hai
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
 # --- STEP 2: AB IMPORTS KAREIN ---
 from pyrogram import Client, filters, idle
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ParseMode
-from pyrogram.errors import UserNotParticipant
 
-# --- RENDER PORT FIX (Flask) ---
+# --- RENDER PORT BINDING (Flask) ---
 web_app = Flask(__name__)
 
 @web_app.route('/')
@@ -22,92 +20,68 @@ def home():
     return "Gourisen OSINT Bot is Live! 🚀"
 
 def run_flask():
-    # Render $PORT variable use karega, default 8080
+    # Render $PORT variable use karta hai (Default 8080)
     port = int(os.environ.get("PORT", 8080))
     web_app.run(host="0.0.0.0", port=port)
 
-# --- CONFIGURATION (Aapka Pura Data) ---
+# --- CONFIGURATION (Aapka Diya Hua Data) ---
 API_ID = 37314366
 API_HASH = "bd4c934697e7e91942ac911a5a287b46"
 STRING_SESSION = "AQI5Xz4ASE6O7locP7_vLrorMTsXT3u80PL1M3tt20Ty8FavBKQdfbZOWjQFyai9DI46XwNhspJZO7S-V7X9JigDkGjAIfF9swyWqmvkRm1uxxR3ajE9rc4IueYDhBY60CeGk_S0FdD9IAQDmjiycLIOAI4PEvKrP5wi-5i6ecZCz4gxbpmyX5o-S8JnVfv51kivPaXVN3ioFP_TB01cgH29aJ9Oa7axnPKlTaq7hadmFfVEttBthtiT2rLz9QkX9CYmEaCJHopr8W1NqR9Is9VOPo6Y2HUGu_kh8mT1y3mgUswR_942rVYYvX43HQuq2wh1zvkf70PbVl89-2DTVHsKLrv9qQAAAAHxiovLAA"
 
-FORCE_CHANNELS = [-1003387459132, -1003892920891, -1003851555909, -1003601267291]
-OTP_GC_LINK = "https://t.me/otpMgroup"
-SOURCE_CHANNEL = "Junaidniz"
-DESTINATIONS = ["otpMgroup", -1003387459132, -1003892920891, -1003851555909, -1003601267291]
+SOURCE_CHANNEL = "Junaidniz" 
+DESTINATIONS = ["otpMgroup"] 
+
 OTP_SOURCE = -1003087662000
 OTP_DEST = "otpMgroup"
 TARGET_BOTS = ["junaidaliRebot", "JunaidnnRebot"]
 
 app = Client("GourisenMegaBot", api_id=API_ID, api_hash=API_HASH, session_string=STRING_SESSION)
 
-# --- LOGIC: FORCE JOIN CHECKER ---
-async def check_sub(user_id):
-    for cid in FORCE_CHANNELS:
-        try:
-            await app.get_chat_member(cid, user_id)
-        except UserNotParticipant:
-            return False
-        except:
-            continue
-    return True
-
-# --- FEATURE 1: START COMMAND WITH BUTTONS ---
-@app.on_message(filters.command("start") & filters.private)
-async def start_cmd(client, message):
-    if await check_sub(message.from_user.id):
-        await message.reply_text(
-            "✅ <b>Verification Successful!</b>\n\nAb aap OTP GC join kar sakte hain.",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Go to OTP Group 🚀", url=OTP_GC_LINK)]]),
-            parse_mode=ParseMode.HTML
-        )
-    else:
-        buttons = [[InlineKeyboardButton(f"Join Channel {i+1} 📢", url=f"https://t.me/c/{str(cid)[4:]}/1")] for i, cid in enumerate(FORCE_CHANNELS)]
-        buttons.append([InlineKeyboardButton("Done / Check Again ✅", callback_data="recheck")])
-        await message.reply_text("🚀 <b>Gourisen OSINT Bot</b>\n\nAage badhne ke liye saare channels join karein!", reply_markup=InlineKeyboardMarkup(buttons), parse_mode=ParseMode.HTML)
-
-@app.on_callback_query(filters.regex("recheck"))
-async def recheck_cb(client, cb):
-    if await check_sub(cb.from_user.id):
-        await cb.message.edit_text("✅ <b>Verified!</b> Niche button click karein.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Go to OTP Group 🚀", url=OTP_GC_LINK)]]), parse_mode=ParseMode.HTML)
-    else:
-        await callback_query.answer("❌ Abhi bhi kuch channels baki hain!", show_alert=True)
-
-# --- FEATURE 2: OTP FORWARDER (Quote Style) ---
+# --- FEATURE 1: OTP FORWARDER (Wahi Purana System) ---
 @app.on_message(filters.chat(OTP_SOURCE))
 async def otp_logic(client, message):
     sender = message.from_user.username if message.from_user else ""
     if sender in TARGET_BOTS:
         text = message.text or message.caption
         if text:
-            clean = text.split("Powered By")[0].strip() if "Powered By" in text else text.strip()
-            final = f"<blockquote>{clean}</blockquote>\n⚡ Powered by @MAGMAxRICH"
-            await client.send_message(OTP_DEST, final, parse_mode=ParseMode.HTML)
-            print("✅ OTP Forwarded!")
+            # Credit hatana
+            clean_text = text.split("Powered By")[0].strip() if "Powered By" in text else text.strip()
+            # Quote + Branding
+            final_msg = f"<blockquote>{clean_text}</blockquote>\n⚡ Powered by @MAGMAxRICH"
+            
+            await client.send_message(
+                chat_id=OTP_DEST, 
+                text=final_msg,
+                parse_mode=ParseMode.HTML
+            )
+            print(f"✅ OTP Bhej Diya!")
 
-# --- FEATURE 3: FILE CLONER (Clean Copy) ---
-@app.on_message(filters.chat(SOURCE_CHANNEL) & (filters.document | filters.video | filters.photo | filters.audio))
+# --- FEATURE 2: FILE CLONER (Sirf File, No Text) ---
+@app.on_message(filters.chat(SOURCE_CHANNEL) & (filters.document | filters.video | filters.audio | filters.photo))
 async def file_cloner(client, message):
-    print(f"📂 File detect hui {SOURCE_CHANNEL} se...")
-    for dest in DESTINATIONS:
+    print(f"📂 Nayi File Detect Hui: {SOURCE_CHANNEL} se...")
+    for chat in DESTINATIONS:
         try:
-            await message.copy(dest, caption="") 
-            print(f"✅ File copied to {dest}")
-        except:
-            pass
+            # Caption="" se saara text aur link hat jayega
+            await message.copy(chat_id=chat, caption="") 
+            print(f"✅ File copy ho gayi: {chat} mein")
+        except Exception as e:
+            print(f"❌ {chat} mein error: {e}")
 
-# --- RENDER MAIN RUNNER ---
+# --- MAIN RUNNER ---
 async def start_everything():
-    # Flask Health Check start karna
+    # Flask Health Check start karna taaki Render 'Live' mane
     threading.Thread(target=run_flask, daemon=True).start()
     
     await app.start()
-    print("🚀 Bot Connected to Telegram! Ab forwarding shuru hogi...")
+    print("🚀 Bot Connected! Forwarding Active hai.")
     await idle()
     await app.stop()
 
 if __name__ == "__main__":
     try:
+        # Loop ko manually run karna Render fix ke liye
         loop.run_until_complete(start_everything())
     except KeyboardInterrupt:
         pass
