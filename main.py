@@ -3,8 +3,8 @@ import asyncio
 import threading
 from flask import Flask
 
-# --- STEP 1: PYTHON 3.14 LOOP FIX (Top Priority) ---
-# Ye Pyrogram se pehle hona zaroori hai taaki 'No current event loop' error na aaye
+# --- STEP 1: RENDER/PYTHON 3.14 LOOP FIX (Priority No. 1) ---
+# Ye Pyrogram import karne se PEHLE hona chahiye warna bot crash ho jayega
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
@@ -19,10 +19,10 @@ web_app = Flask(__name__)
 
 @web_app.route('/')
 def home():
-    return "Gourisen OSINT Mega Bot is Live! 🚀"
+    return "Gourisen OSINT Bot is Live! 🚀"
 
 def run_flask():
-    # Render $PORT use karta hai (default 8080)
+    # Render $PORT variable use karega, default 8080
     port = int(os.environ.get("PORT", 8080))
     web_app.run(host="0.0.0.0", port=port)
 
@@ -71,9 +71,9 @@ async def recheck_cb(client, cb):
     if await check_sub(cb.from_user.id):
         await cb.message.edit_text("✅ <b>Verified!</b> Niche button click karein.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Go to OTP Group 🚀", url=OTP_GC_LINK)]]), parse_mode=ParseMode.HTML)
     else:
-        await cb.answer("❌ Abhi bhi kuch channels baki hain!", show_alert=True)
+        await callback_query.answer("❌ Abhi bhi kuch channels baki hain!", show_alert=True)
 
-# --- FEATURE 2: OTP FORWARDER (Quote Style + Stars Protected) ---
+# --- FEATURE 2: OTP FORWARDER (Quote Style) ---
 @app.on_message(filters.chat(OTP_SOURCE))
 async def otp_logic(client, message):
     sender = message.from_user.username if message.from_user else ""
@@ -83,29 +83,31 @@ async def otp_logic(client, message):
             clean = text.split("Powered By")[0].strip() if "Powered By" in text else text.strip()
             final = f"<blockquote>{clean}</blockquote>\n⚡ Powered by @MAGMAxRICH"
             await client.send_message(OTP_DEST, final, parse_mode=ParseMode.HTML)
+            print("✅ OTP Forwarded!")
 
 # --- FEATURE 3: FILE CLONER (Clean Copy) ---
 @app.on_message(filters.chat(SOURCE_CHANNEL) & (filters.document | filters.video | filters.photo | filters.audio))
 async def file_cloner(client, message):
+    print(f"📂 File detect hui {SOURCE_CHANNEL} se...")
     for dest in DESTINATIONS:
         try:
             await message.copy(dest, caption="") 
+            print(f"✅ File copied to {dest}")
         except:
             pass
 
 # --- RENDER MAIN RUNNER ---
-async def start_bot():
-    # Flask ko thread mein start karna taaki Render health check pass ho jaye
+async def start_everything():
+    # Flask Health Check start karna
     threading.Thread(target=run_flask, daemon=True).start()
     
     await app.start()
-    print("🚀 Gourisen OSINT Bot is Online!")
+    print("🚀 Bot Connected to Telegram! Ab forwarding shuru hogi...")
     await idle()
     await app.stop()
 
 if __name__ == "__main__":
-    # Event loop ko manually run karna Python 3.14 crash se bachne ke liye
     try:
-        loop.run_until_complete(start_bot())
+        loop.run_until_complete(start_everything())
     except KeyboardInterrupt:
         pass
